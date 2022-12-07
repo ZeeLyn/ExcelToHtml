@@ -1,0 +1,6 @@
+﻿.e2h-table { border-top: 1px #ccc solid; border-left: 1px #ccc solid; border-collapse: collapse; font-size: 11px; color: #000; }
+.e2h-table td { border-right: 1px #ccc solid; border-bottom: 1px #ccc solid; min-width: 90px; height: 23px; white-space: nowrap; }
+.e2h-table .e2h-bold { font-weight: bold; }
+.e2h-table .e2h-italic { font-style: italic; }
+.e2h-table .e2h-underline { text-decoration: underline; }
+.e2h-table .e2h-wrap { white-space: normal; }
