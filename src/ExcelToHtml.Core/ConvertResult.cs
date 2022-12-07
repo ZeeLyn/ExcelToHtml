@@ -8,13 +8,14 @@ namespace ExcelToHtml.Core
     {
         public List<Sheet> Sheets { get; set; } = new();
 
-        public string Style { get; set; }
+        public string GlobalStyle { get; set; }
+
+        internal string Script { get; set; }
     }
 
     public class Sheet
     {
         public string Name { get; set; }
-        public string Html { get; set; }
-
+        public StringBuilder Html { get; set; }
     }
 }

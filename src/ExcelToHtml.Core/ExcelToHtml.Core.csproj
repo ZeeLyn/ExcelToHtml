@@ -7,12 +7,14 @@
 
   <ItemGroup>
     <None Remove="style.css" />
+    <None Remove="ui.js" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="style.css">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>
+    <EmbeddedResource Include="ui.js" />
   </ItemGroup>
 
   <ItemGroup>

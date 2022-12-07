@@ -11,78 +11,71 @@ using System.Threading.Tasks;
 
 namespace ExcelToHtml.Core
 {
-    public class ExcelReader
+
+    internal sealed class ExcelReader
     {
-        public async Task<string> Read(string file)
+        private string _globalStyle { get; }
+        private string _globalScript { get; }
+
+        internal ExcelReader()
         {
-            var ext = Path.GetExtension(file).ToLower();
-            if (!ext.Equals(".xlsx") && !ext.Equals("xls"))
-                throw new NotSupportedException("Not supported file format！");
-            using var fs = new FileStream(file, FileMode.Open, FileAccess.Read);
-            using IWorkbook workbook = ext.Equals(".xlsx") ? new XSSFWorkbook(fs) : new HSSFWorkbook(fs);
-            var sheets = workbook.NumberOfSheets;
-            var table = new StringBuilder();
-
-            for (var sheetIdx = 0; sheetIdx < sheets; sheetIdx++)
+            var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+            var styleFile = assembly.GetName().Name + ".style.css";
+            using var styleStream = assembly.GetManifestResourceStream(styleFile);
+            if (styleStream is not null)
             {
-                table.Append("<table>");
-                var sheet = workbook.GetSheetAt(sheetIdx);
-
-                for (var rowIdx = 0; rowIdx < sheet.LastRowNum; rowIdx++)
-                {
-                    table.Append("<tr>");
-                    var row = sheet.GetRow(rowIdx);
-                    if (row is null)
-                        continue;
-
-                    foreach (var cell in row.Cells)
-                    {
-                        table.AppendFormat("<td>{0}</td>", cell?.ToString());
-                    }
-
-                    table.Append("</tr>");
-                }
-                table.Append("</table>");
+                using var reader = new StreamReader(styleStream);
+                _globalStyle = reader.ReadToEnd();
             }
-            return table.ToString();
+
+            var jsFile = assembly.GetName().Name + ".ui.js";
+
+            using var scriptStream = assembly.GetManifestResourceStream(jsFile);
+            if (scriptStream is not null)
+            {
+                using var reader = new StreamReader(scriptStream);
+                _globalScript = reader.ReadToEnd();
+            }
         }
 
-        public async Task<ConvertResult> Read2(Stream stream, string password = "")
+        internal async Task<ConvertResult> ReaderAsync(Stream stream, string password = "")
         {
             using var ep = string.IsNullOrWhiteSpace(password) ? new ExcelPackage(stream) : new ExcelPackage(stream, password);
-
-            var result = new ConvertResult();
+            var result = new ConvertResult
+            {
+                Script=_globalScript
+            };
             var table = new StringBuilder();
             var mergeCell = new HashSet<int>();
             var tableStyle = new CellStyleReader();
+
             foreach (var sheet in ep.Workbook.Worksheets)
             {
                 if (sheet.Dimension is null)
                     continue;
+
                 var sheetDetail = new Sheet
                 {
-                    Name= sheet.Name
+                    Name= sheet.Name,
                 };
                 table.Append("<table class=\"e2h-table\">");
                 for (var rowIdx = 1; rowIdx <= sheet.Dimension.Rows; rowIdx++)
                 {
-                    table.Append("<tr>");
-                    //var row = sheet.Row(rowIdx);
-                    //if (row is null)
-                    //    continue;
+                    var row = sheet.Row(rowIdx);
+                    table.AppendFormat("<tr><td{1}>{0}</td>", rowIdx, $" height=\"{(int)row.Height}\"");
+
                     for (var cellIdx = 1; cellIdx<=sheet.Dimension.Columns; cellIdx++)
                     {
-
                         var cell = sheet.Cells[rowIdx, cellIdx];
                         if (cell is null)
                         {
                             table.Append("<td></td>");
                             continue;
                         }
-
                         var value = cell.Text?.Replace("\n", "<br>");
-                        if (string.IsNullOrWhiteSpace(value))
-                            value = " ";
+                        //if (value=="7732585"&& rowIdx==46)
+                        //    value = value;
+
                         var mergeRows = 0;
                         var mergeCols = 0;
                         if (cell.Merge)
@@ -96,10 +89,6 @@ namespace ExcelToHtml.Core
                             mergeCols= sheet.Cells[sheet.MergedCells[id - 1]].Columns;
                         }
 
-                        if (cell.IsRichText)
-                        {
-
-                        }
                         var style = tableStyle.Convert(cell);
                         table.AppendFormat("<td{1}{2}{3}{4}{5}>{0}</td>", value,
                             cell.Merge && mergeRows > 1 ? " rowspan=\"" + mergeRows + "\"" : string.Empty,
@@ -107,14 +96,14 @@ namespace ExcelToHtml.Core
                             style.ClassNames.Any() ? $" class=\"{string.Join(" ", style.ClassNames)}\"" : string.Empty,
                             string.IsNullOrWhiteSpace(style.Valign) ? string.Empty : $" valign=\"{style.Valign}\"",
                             string.IsNullOrWhiteSpace(style.Align) ? string.Empty : $" align=\"{style.Align}\""
-                            );
+                        );
                     }
 
                     table.Append("</tr>");
                 }
                 table.Append("</table>");
-                sheetDetail.Html= table.ToString();
-                var styles = new StringBuilder();
+                sheetDetail.Html= table;
+                var styles = new StringBuilder(_globalStyle);
                 foreach (var color in tableStyle.GetAllFontColors())
                 {
                     styles.AppendFormat(".e2h-table .{0}{{color:{1}}}", color.Value, color.Key);
@@ -130,12 +119,12 @@ namespace ExcelToHtml.Core
                     styles.AppendFormat(".e2h-table .fs-{0}{{font-size:{0}px}}", size);
                 }
 
-                result.Style = styles.ToString();
+                result.GlobalStyle = styles.ToString();
 
                 result.Sheets.Add(sheetDetail);
             }
 
-            return result;
+            return await Task.FromResult(result);
         }
     }
 }

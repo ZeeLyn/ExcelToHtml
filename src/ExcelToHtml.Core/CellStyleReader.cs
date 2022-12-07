@@ -7,7 +7,7 @@ using System.Text;
 
 namespace ExcelToHtml.Core
 {
-    public class CellStyleReader
+    internal sealed class CellStyleReader
     {
         private const string ItalicClassName = "e2h-italic";
         private const string UnderLineClassName = "e2h-underline";
@@ -17,13 +17,13 @@ namespace ExcelToHtml.Core
 
         private const string DefaultFontColor = "#000000";
         private const string DefaultFillColor = "#ffffff";
-        private const float DefaultFontSize = 11;
+        private const float DefaultFontSize = 12;
 
         private readonly Dictionary<string, string> _colors = new();
         private readonly Dictionary<string, string> _fillColors = new();
         private readonly HashSet<float> _fontSize = new();
 
-        public CellStyle Convert(ExcelRange cell)
+        internal CellStyle Convert(ExcelRange cell)
         {
             var style = new CellStyle();
 
@@ -50,7 +50,7 @@ namespace ExcelToHtml.Core
             if (cell.Style.Font.UnderLine && !style.ClassNames.Contains(UnderLineClassName))
                 style.ClassNames.Add(UnderLineClassName);
 
-            if (cell.Style.Font.Size != DefaultFontSize)
+            if (cell.Style.Font.Size != DefaultFontSize && cell.Style.Font.Size>DefaultFontSize)
             {
                 if (!_fontSize.Contains(cell.Style.Font.Size))
                     _fontSize.Add(cell.Style.Font.Size);
@@ -126,20 +126,11 @@ namespace ExcelToHtml.Core
 
         public static string ExcelColorToColor(ExcelColor color)
         {
-            if (string.IsNullOrWhiteSpace(color.Rgb)||color.Rgb.Length!=8)
-                return "#000000";
-            return $"#{color.Rgb.Substring(2).ToLower()}";
+            if (!string.IsNullOrWhiteSpace(color.Rgb))
+                return $"#{color.Rgb.Substring(2).ToLower()}";
+            var value = color.LookupColor();
+            return $"#{value.Substring(3).ToLower()}";
         }
     }
 
-    public class CellStyle
-    {
-        public HashSet<string> ClassNames { get; set; } = new();
-
-        public string Style { get; set; }
-
-        public string Valign { get; set; }
-
-        public string Align { get; set; }
-    }
 }
