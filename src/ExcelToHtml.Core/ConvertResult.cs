@@ -16,6 +16,6 @@ namespace ExcelToHtml.Core
     public class Sheet
     {
         public string Name { get; set; }
-        public StringBuilder Html { get; set; }
+        public string Html { get; set; }
     }
 }

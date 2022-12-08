@@ -30,8 +30,8 @@ namespace ExcelToHtml.Core
             html.Append("<div class=\"e2h-main\">");
             for (var i = 0; i < result.Sheets.Count; i++)
             {
-                html.AppendFormat("<div class=\"e2h-container{1}\" >{0}</div>", result.Sheets[i].Html, i>0 ? " e2h-hide" : "");
-                tabs.AppendFormat("<div class=\"e2h-tab-item{1}\">{0}</div>", result.Sheets[i].Name, i==0 ? " e2h-active" : "");
+                html.AppendFormat("<div class=\"e2h-container{1}\" >{0}</div>", result.Sheets[i].Html, i==0 ? " e2h-active" : "");
+                tabs.AppendFormat("<div class=\"e2h-tab-item{1}\">{0}</div>", result.Sheets[i].Name, i==0 ? " e2h-tab-active" : "");
             }
             html.AppendFormat("<div class=\"e2h-tabs\">{0}</div>", tabs);
             html.Append("</div>");

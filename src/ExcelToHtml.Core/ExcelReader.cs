@@ -53,7 +53,8 @@ namespace ExcelToHtml.Core
             {
                 if (sheet.Dimension is null)
                     continue;
-
+                table.Clear();
+                mergeCell.Clear();
                 var sheetDetail = new Sheet
                 {
                     Name= sheet.Name,
@@ -102,27 +103,29 @@ namespace ExcelToHtml.Core
                     table.Append("</tr>");
                 }
                 table.Append("</table>");
-                sheetDetail.Html= table;
-                var styles = new StringBuilder(_globalStyle);
-                foreach (var color in tableStyle.GetAllFontColors())
-                {
-                    styles.AppendFormat(".e2h-table .{0}{{color:{1}}}", color.Value, color.Key);
-                }
+                sheetDetail.Html= table.ToString();
 
-                foreach (var color in tableStyle.GetAllFillColors())
-                {
-                    styles.AppendFormat(".e2h-table .{0}{{background:{1}}}", color.Value, color.Key);
-                }
-
-                foreach (var size in tableStyle.GetAllFontSize())
-                {
-                    styles.AppendFormat(".e2h-table .fs-{0}{{font-size:{0}px}}", size);
-                }
-
-                result.GlobalStyle = styles.ToString();
 
                 result.Sheets.Add(sheetDetail);
             }
+
+            var styles = new StringBuilder(_globalStyle);
+            foreach (var color in tableStyle.GetAllFontColors())
+            {
+                styles.AppendFormat(".e2h-table .{0}{{color:{1}}}", color.Value, color.Key);
+            }
+
+            foreach (var color in tableStyle.GetAllFillColors())
+            {
+                styles.AppendFormat(".e2h-table .{0}{{background:{1}}}", color.Value, color.Key);
+            }
+
+            foreach (var size in tableStyle.GetAllFontSize())
+            {
+                styles.AppendFormat(".e2h-table .fs-{0}{{font-size:{0}px}}", size);
+            }
+
+            result.GlobalStyle = styles.ToString();
 
             return await Task.FromResult(result);
         }
